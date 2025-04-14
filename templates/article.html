@@ -33,30 +33,30 @@
                 </a>
             </div>
             
-            <!-- Mobile-friendly action buttons -->
+            <!-- Action buttons -->
             <div class="row mb-4">
                 <div class="col-6 col-md-3 mb-2">
-                    <button class="article-action-btn btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#languageModal">
+                    <button class="btn btn-outline-dark w-100" data-bs-toggle="modal" data-bs-target="#languageModal">
                         <i data-feather="globe"></i> Language
                     </button>
                 </div>
                 <div class="col-6 col-md-3 mb-2">
-                    <button class="article-action-btn btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#translateModal">
+                    <button class="btn btn-outline-dark w-100" data-bs-toggle="modal" data-bs-target="#translateModal">
                         <i data-feather="layers"></i> Translate
                     </button>
                 </div>
                 <div class="col-6 col-md-2 mb-2">
-                    <button class="article-action-btn btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#shareModal">
+                    <button class="btn btn-outline-dark w-100" data-bs-toggle="modal" data-bs-target="#shareModal">
                         <i data-feather="share-2"></i> Share
                     </button>
                 </div>
                 <div class="col-6 col-md-2 mb-2">
-                    <button class="article-action-btn btn btn-outline-dark" id="toggle-highlights-btn">
+                    <button class="btn btn-outline-dark w-100" id="toggle-highlights-btn">
                         <i data-feather="eye"></i> <span id="highlights-btn-text">Show Reviews</span>
                     </button>
                 </div>
                 <div class="col-6 col-md-2 mb-2">
-                    <a href="{{ url_for('export_article', title=article.title, lang=lang) }}" class="article-action-btn btn btn-outline-dark">
+                    <a href="{{ url_for('export_article', title=article.title, lang=lang) }}" class="btn btn-outline-dark w-100">
                         <i data-feather="download"></i> Download
                     </a>
                 </div>

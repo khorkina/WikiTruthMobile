@@ -379,11 +379,12 @@ body {
 
 /* Highlight styles */
 mark {
-    background-color: var(--highlight-color);
+    background-color: #e6e6e6;
     padding: 2px 4px;
-    border: 1px solid var(--border-color);
+    border: 1px solid #aaaaaa;
     border-radius: 3px;
     font-weight: 500;
+    color: #000000;
 }
 
 .highlight-interface {

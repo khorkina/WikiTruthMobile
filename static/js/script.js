@@ -229,10 +229,24 @@ function applyHighlights(sectionId, highlights) {
         const text = highlight.text;
         if (!text) return;
         
-        // Simple text replacement (more robust than regex for this purpose)
-        const parts = html.split(text);
-        if (parts.length > 1) {
-            html = parts.join(`<mark>${text}</mark>`);
+        try {
+            // Escape the text for use in regex (to handle special characters)
+            const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const escapedText = escapeRegExp(text);
+            
+            // Create a regex to find the text
+            const regex = new RegExp(escapedText, 'g');
+            
+            // Use regex replacement for more accuracy
+            html = html.replace(regex, `<mark>${text}</mark>`);
+        } catch (e) {
+            console.error('Error applying highlight:', e);
+            
+            // Fallback to simple replacement if regex fails
+            const parts = html.split(text);
+            if (parts.length > 1) {
+                html = parts.join(`<mark>${text}</mark>`);
+            }
         }
     });
     
