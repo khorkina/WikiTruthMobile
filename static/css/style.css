@@ -224,12 +224,15 @@ body {
     transition: all 0.2s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     width: 100%;
+    cursor: pointer;
 }
 
 .article-action-btn:hover {
     background-color: var(--secondary-bg);
     transform: translateY(-2px);
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    color: var(--primary-text);
 }
 
 .article-summary-container,
@@ -377,7 +380,10 @@ body {
 /* Highlight styles */
 mark {
     background-color: var(--highlight-color);
-    padding: 0 2px;
+    padding: 2px 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    font-weight: 500;
 }
 
 .highlight-interface {

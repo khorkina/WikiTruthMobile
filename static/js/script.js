@@ -281,8 +281,8 @@ function saveHighlight(event, articleId, context) {
             // Show success message
             alert('Text marked for review!');
             
-            // Reload the page to show all highlights correctly
-            window.location.reload();
+            // Don't reload but show highlights instantly
+            showOnlyHighlights(true);
         } else {
             alert('Error: ' + (data.error || 'Could not save highlight'));
         }

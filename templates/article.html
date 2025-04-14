@@ -36,27 +36,27 @@
             <!-- Mobile-friendly action buttons -->
             <div class="row mb-4">
                 <div class="col-6 col-md-3 mb-2">
-                    <button class="article-action-btn" data-bs-toggle="modal" data-bs-target="#languageModal">
+                    <button class="article-action-btn btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#languageModal">
                         <i data-feather="globe"></i> Language
                     </button>
                 </div>
                 <div class="col-6 col-md-3 mb-2">
-                    <button class="article-action-btn" data-bs-toggle="modal" data-bs-target="#translateModal">
+                    <button class="article-action-btn btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#translateModal">
                         <i data-feather="layers"></i> Translate
                     </button>
                 </div>
                 <div class="col-6 col-md-2 mb-2">
-                    <button class="article-action-btn" data-bs-toggle="modal" data-bs-target="#shareModal">
+                    <button class="article-action-btn btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#shareModal">
                         <i data-feather="share-2"></i> Share
                     </button>
                 </div>
                 <div class="col-6 col-md-2 mb-2">
-                    <button class="article-action-btn" id="toggle-highlights-btn">
+                    <button class="article-action-btn btn btn-outline-dark" id="toggle-highlights-btn">
                         <i data-feather="eye"></i> <span id="highlights-btn-text">Show Reviews</span>
                     </button>
                 </div>
                 <div class="col-6 col-md-2 mb-2">
-                    <a href="{{ url_for('export_article', title=article.title, lang=lang) }}" class="article-action-btn">
+                    <a href="{{ url_for('export_article', title=article.title, lang=lang) }}" class="article-action-btn btn btn-outline-dark">
                         <i data-feather="download"></i> Download
                     </a>
                 </div>
