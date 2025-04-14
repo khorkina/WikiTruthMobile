@@ -380,151 +380,141 @@ function translateSection(sectionId, fromLang, toLang) {
  * Show only highlighted content
  */
 function showOnlyHighlights(showOnly) {
-    // Get all sections with highlights
-    const sections = document.querySelectorAll('.content-section');
-    
     // Update button text
     const btnText = document.getElementById('highlights-btn-text');
     if (btnText) {
         btnText.textContent = showOnly ? 'Hide Reviews' : 'Show Reviews';
     }
     
-    // Highlight toggle logic
-    if (showOnly) {
-        // Create highlights container if it doesn't exist
-        let highlightsContainer = document.querySelector('.highlights-only');
-        if (!highlightsContainer) {
-            highlightsContainer = document.createElement('div');
-            highlightsContainer.className = 'highlights-only';
-            
-            // Create heading
-            const heading = document.createElement('h3');
-            heading.className = 'section-title';
-            heading.textContent = 'Marked Reviews';
-            
-            // Add to container
-            highlightsContainer.appendChild(heading);
-            
-            // Add to page
-            const articleContent = document.querySelector('.article-content-container');
-            if (articleContent) {
-                articleContent.prepend(highlightsContainer);
-            }
-        }
-        
-        // Load highlights data from server for this article
-        const articleId = document.querySelector('meta[name="article-id"]')?.content;
-        
-        if (articleId) {
-            fetch(`/save-highlight`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    'article_id': articleId,
-                    'text_to_highlight': '',  // Empty to just retrieve current highlights
-                    'context': 'retrieve_only'
-                })
+    // Load highlights data from server for this article
+    const articleId = document.querySelector('meta[name="article-id"]')?.content;
+    
+    if (showOnly && articleId) {
+        // Apply highlights directly to article text
+        fetch(`/save-highlight`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'article_id': articleId,
+                'text_to_highlight': '',  // Empty to just retrieve current highlights
+                'context': 'retrieve_only'
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.highlights && data.highlights.length > 0) {
-                    // Clear previous highlights container content
-                    highlightsContainer.innerHTML = '';
-                    
-                    // Create heading
-                    const heading = document.createElement('h3');
-                    heading.className = 'section-title';
-                    heading.textContent = 'Marked Reviews';
-                    highlightsContainer.appendChild(heading);
-                    
-                    // Process each highlight
-                    data.highlights.forEach(highlight => {
-                        // Create highlight item
-                        const highlightItem = document.createElement('div');
-                        highlightItem.className = 'highlight-item';
-                        
-                        // Create context info
-                        const context = document.createElement('div');
-                        context.className = 'highlight-context';
-                        context.textContent = highlight.context || 'General';
-                        
-                        // Create highlight text
-                        const text = document.createElement('div');
-                        text.className = 'highlight-text';
-                        text.innerHTML = `<mark>${highlight.text}</mark>`;
-                        
-                        // Add to highlight item
-                        highlightItem.appendChild(context);
-                        highlightItem.appendChild(text);
-                        
-                        // Add to container
-                        highlightsContainer.appendChild(highlightItem);
-                        
-                        // Also highlight in the actual content
-                        if (highlight.context === 'summary') {
-                            const summary = document.getElementById('article-summary');
-                            if (summary) {
-                                let summaryHtml = summary.innerHTML;
-                                try {
-                                    const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                                    const escapedText = escapeRegExp(highlight.text);
-                                    const regex = new RegExp(escapedText, 'g');
-                                    summaryHtml = summaryHtml.replace(regex, `<mark>${highlight.text}</mark>`);
-                                    summary.innerHTML = summaryHtml;
-                                } catch (e) {
-                                    console.error('Error highlighting in summary:', e);
-                                }
-                            }
-                        } else if (highlight.context.startsWith('section-')) {
-                            const sectionNumber = highlight.context.replace('section-', '');
-                            const sectionContent = document.getElementById(`section-content-${sectionNumber}`);
-                            if (sectionContent) {
-                                let sectionHtml = sectionContent.innerHTML;
-                                try {
-                                    const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                                    const escapedText = escapeRegExp(highlight.text);
-                                    const regex = new RegExp(escapedText, 'g');
-                                    sectionHtml = sectionHtml.replace(regex, `<mark>${highlight.text}</mark>`);
-                                    sectionContent.innerHTML = sectionHtml;
-                                } catch (e) {
-                                    console.error('Error highlighting in section:', e);
-                                }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.highlights && data.highlights.length > 0) {
+                // Process each highlight and apply it directly to the text
+                data.highlights.forEach(highlight => {
+                    // Apply highlight to the actual content
+                    if (highlight.context === 'summary') {
+                        const summary = document.getElementById('article-summary');
+                        if (summary) {
+                            let summaryHtml = summary.innerHTML;
+                            try {
+                                const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                const escapedText = escapeRegExp(highlight.text);
+                                const regex = new RegExp(escapedText, 'g');
+                                summaryHtml = summaryHtml.replace(regex, `<mark>${highlight.text}</mark>`);
+                                summary.innerHTML = summaryHtml;
+                            } catch (e) {
+                                console.error('Error highlighting in summary:', e);
                             }
                         }
-                    });
+                    } else if (highlight.context.startsWith('section-')) {
+                        const sectionNumber = highlight.context.replace('section-', '');
+                        const sectionContent = document.getElementById(`section-content-${sectionNumber}`);
+                        if (sectionContent) {
+                            let sectionHtml = sectionContent.innerHTML;
+                            try {
+                                const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                const escapedText = escapeRegExp(highlight.text);
+                                const regex = new RegExp(escapedText, 'g');
+                                sectionHtml = sectionHtml.replace(regex, `<mark>${highlight.text}</mark>`);
+                                sectionContent.innerHTML = sectionHtml;
+                            } catch (e) {
+                                console.error('Error highlighting in section:', e);
+                            }
+                        }
+                    }
+                });
+                
+                // Show a small notification of how many highlights are shown
+                if (data.highlights.length > 0) {
+                    const notification = document.createElement('div');
+                    notification.className = 'alert alert-success highlight-notification';
+                    notification.style.position = 'fixed';
+                    notification.style.top = '10px';
+                    notification.style.right = '10px';
+                    notification.style.zIndex = '9999';
+                    notification.style.padding = '10px 15px';
+                    notification.style.borderRadius = '4px';
+                    notification.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                    notification.innerHTML = `<i data-feather="check-circle"></i> Showing ${data.highlights.length} highlighted review${data.highlights.length > 1 ? 's' : ''}`;
+                    document.body.appendChild(notification);
                     
-                    // Show highlighted container
-                    highlightsContainer.style.display = 'block';
-                } else {
-                    // No highlights found
-                    highlightsContainer.innerHTML = `
-                        <h3 class="section-title">Marked Reviews</h3>
-                        <p>No text has been marked for review in this article.</p>
-                    `;
+                    // Replace feather icons
+                    if (window.feather) {
+                        feather.replace();
+                    }
+                    
+                    // Remove notification after 3 seconds
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
                 }
-            })
-            .catch(error => {
-                console.error('Error fetching highlights:', error);
-                highlightsContainer.innerHTML = `
-                    <h3 class="section-title">Marked Reviews</h3>
-                    <p>Error loading review highlights. Please try again later.</p>
-                `;
-            });
-        } else {
-            highlightsContainer.innerHTML = `
-                <h3 class="section-title">Marked Reviews</h3>
-                <p>No article information found.</p>
-            `;
-        }
+            } else {
+                // Show a notification that no highlights were found
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-warning highlight-notification';
+                notification.style.position = 'fixed';
+                notification.style.top = '10px';
+                notification.style.right = '10px';
+                notification.style.zIndex = '9999';
+                notification.style.padding = '10px 15px';
+                notification.style.borderRadius = '4px';
+                notification.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                notification.innerHTML = `<i data-feather="info"></i> No reviews have been marked for this article`;
+                document.body.appendChild(notification);
+                
+                // Replace feather icons
+                if (window.feather) {
+                    feather.replace();
+                }
+                
+                // Remove notification after 3 seconds
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching highlights:', error);
+            // Show error notification
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-danger highlight-notification';
+            notification.style.position = 'fixed';
+            notification.style.top = '10px';
+            notification.style.right = '10px';
+            notification.style.zIndex = '9999';
+            notification.style.padding = '10px 15px';
+            notification.style.borderRadius = '4px';
+            notification.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+            notification.innerHTML = `<i data-feather="alert-triangle"></i> Error loading review highlights`;
+            document.body.appendChild(notification);
+            
+            // Replace feather icons
+            if (window.feather) {
+                feather.replace();
+            }
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        });
     } else {
-        // Hide highlights container
-        const highlightsContainer = document.querySelector('.highlights-only');
-        if (highlightsContainer) {
-            highlightsContainer.style.display = 'none';
-        }
-        
         // Remove highlights from the actual content
         document.querySelectorAll('mark').forEach(mark => {
             const parent = mark.parentNode;
@@ -532,6 +522,11 @@ function showOnlyHighlights(showOnly) {
                 parent.replaceChild(document.createTextNode(mark.textContent), mark);
                 parent.normalize(); // Merge adjacent text nodes
             }
+        });
+        
+        // Remove any existing highlight notifications
+        document.querySelectorAll('.highlight-notification').forEach(notification => {
+            notification.remove();
         });
     }
 }

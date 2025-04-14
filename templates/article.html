@@ -382,11 +382,47 @@
             </div>
             <div class="modal-body">
                 <p>Download this article as a Word document (.docx):</p>
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('export_article', title=article.title, lang=lang) }}" class="btn btn-primary">
-                        <i data-feather="download"></i> Download Word Document
-                    </a>
+                
+                <div class="mb-3">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="mb-3">Original Article Only</h6>
+                            <div class="d-grid">
+                                <a href="{{ url_for('export_article', title=article.title, lang=lang, include_translations='false') }}" class="btn btn-outline-dark">
+                                    <i data-feather="download"></i> Download Original {{ get_language_name(lang) }} Version
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if show_translation and translate_to != lang %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="mb-3">With Translations</h6>
+                            <div class="d-grid">
+                                <a href="{{ url_for('export_article', title=article.title, lang=lang, include_translations='true', to_lang=translate_to) }}" 
+                                   class="btn btn-outline-dark">
+                                    <i data-feather="download"></i> Download With {{ get_language_name(translate_to) }} Translations
+                                </a>
+                            </div>
+                            <p class="form-text mt-2">
+                                Includes both the original text and translations side by side.
+                            </p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="mb-3">With Translations</h6>
+                            <p class="text-muted mb-2">To download with translations, first select a translation language in the "Translate" option.</p>
+                            <button class="btn btn-secondary w-100" disabled>
+                                <i data-feather="download"></i> Download With Translations
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
+                
                 <div class="mt-3">
                     <p class="small text-muted">The document will include:</p>
                     <ul class="small text-muted">
@@ -394,6 +430,9 @@
                         <li>Summary section</li>
                         <li>Full content with proper headings</li>
                         <li>Source reference to Wikipedia</li>
+                        {% if show_translation and translate_to != lang %}
+                        <li>Optional translations in {{ get_language_name(translate_to) }}</li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>

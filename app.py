@@ -250,6 +250,8 @@ def view_all_highlights():
 def export_article(title):
     """Export article as Word document"""
     lang = request.args.get('lang', 'en')
+    include_translations = request.args.get('include_translations', 'false').lower() == 'true'
+    translate_to = request.args.get('to_lang', '')
     
     try:
         # Get article content
@@ -262,6 +264,32 @@ def export_article(title):
         # Process article content into sections
         sections = wiki_utils.split_content_into_sections(article['content'])
         
+        # Get translations if needed
+        translations = {}
+        if include_translations and translate_to:
+            try:
+                # Get translation of summary
+                translations['summary'] = wiki_utils.translate_text(article['summary'], translate_to, lang)
+                
+                # Get translations of sections
+                translations['sections'] = []
+                for section in sections:
+                    if section['content']:
+                        translated_content = wiki_utils.translate_text(section['content'], translate_to, lang)
+                        translations['sections'].append({
+                            'title': section['title'],
+                            'content': translated_content
+                        })
+                    else:
+                        translations['sections'].append({
+                            'title': section['title'],
+                            'content': ''
+                        })
+            except Exception as e:
+                logger.error(f"Translation error: {str(e)}")
+                # Continue without translations if they fail
+                flash(f"Warning: Some translations could not be completed. The document will include partial translations.", 'warning')
+        
         # Create Word document
         doc = Document()
         
@@ -270,20 +298,49 @@ def export_article(title):
         
         # Add metadata
         doc.add_paragraph(f"Source: {article['url']}")
-        doc.add_paragraph(f"Language: {get_language_name(lang)} ({lang})")
+        
+        if include_translations and translate_to:
+            doc.add_paragraph(f"Original Language: {get_language_name(lang)} ({lang})")
+            doc.add_paragraph(f"Translated to: {get_language_name(translate_to)} ({translate_to})")
+        else:
+            doc.add_paragraph(f"Language: {get_language_name(lang)} ({lang})")
+        
         doc.add_paragraph(f"Exported on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
         # Add summary
         doc.add_heading('Summary', 1)
         doc.add_paragraph(article['summary'])
         
+        # Add translated summary if available
+        if include_translations and translate_to and 'summary' in translations:
+            doc.add_heading(f'Summary (Translated to {get_language_name(translate_to)})', 2)
+            doc.add_paragraph(translations['summary'])
+        
         # Add content sections
         doc.add_heading('Full Content', 1)
-        for section in sections:
+        
+        for i, section in enumerate(sections):
             if section['title']:
                 level = min(section['level'] + 1, 9)  # Word doc supports headings 1-9
                 doc.add_heading(section['title'], level)
+            
+            # Add original content
             doc.add_paragraph(section['content'])
+            
+            # Add translation if requested
+            if (include_translations and translate_to and 
+                'sections' in translations and i < len(translations['sections'])):
+                
+                # Add a heading for the translation if there's content to translate
+                if section['content'].strip():
+                    translated_heading = f"Translation ({get_language_name(translate_to)})"
+                    doc.add_heading(translated_heading, level + 1 if section['title'] else level)
+                    
+                    # Add the translated content
+                    doc.add_paragraph(translations['sections'][i]['content'])
+                    
+                    # Add a separator for readability
+                    doc.add_paragraph("---")
         
         # Save to memory
         file_stream = BytesIO()
@@ -292,11 +349,18 @@ def export_article(title):
         
         # Return file for download
         safe_filename = title.replace('/', '_').replace('\\', '_')
+        
+        # Create a filename that indicates if translations are included
+        if include_translations and translate_to:
+            download_name = f"{safe_filename}_{lang}_with_{translate_to}_translations.docx"
+        else:
+            download_name = f"{safe_filename}_{lang}.docx"
+            
         return send_file(
             file_stream,
             mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             as_attachment=True,
-            download_name=f"{safe_filename}_{lang}.docx"
+            download_name=download_name
         )
     except Exception as e:
         logger.error(f"Export error: {str(e)}")
