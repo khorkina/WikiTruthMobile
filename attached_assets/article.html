@@ -1,0 +1,829 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block head %}
+<!-- Social Sharing Script -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="article-container">
+    <div class="row">
+        <div class="col-md-10 col-lg-8 mx-auto">
+            <div class="article-header">
+                <h1 class="article-title">{{ article.title }}</h1>
+                
+                <div class="article-meta">
+                    <span class="language-badge">
+                        <i data-feather="globe"></i> {{ get_language_name(lang) }}
+                    </span>
+                    <a href="{{ article.url }}" target="_blank" class="wiki-link">
+                        <i data-feather="external-link"></i> View on Wikipedia
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Donation bar at the top of article -->
+            <div class="donation-container article-top">
+                <a href="https://ko-fi.com/wikitruth" target="_blank" class="kofi-button">
+                    <i data-feather="coffee"></i> Support this project on Ko-fi
+                </a>
+            </div>
+            
+            <!-- Mobile-friendly action buttons -->
+            <div class="row mb-4">
+                <div class="col-6 col-md-3 mb-2">
+                    <button class="article-action-btn" data-bs-toggle="modal" data-bs-target="#languageModal">
+                        <i data-feather="globe"></i> Language
+                    </button>
+                </div>
+                <div class="col-6 col-md-3 mb-2">
+                    <button class="article-action-btn" data-bs-toggle="modal" data-bs-target="#translateModal">
+                        <i data-feather="layers"></i> Translate
+                    </button>
+                </div>
+                <div class="col-6 col-md-2 mb-2">
+                    <button class="article-action-btn" data-bs-toggle="modal" data-bs-target="#shareModal">
+                        <i data-feather="share-2"></i> Share
+                    </button>
+                </div>
+                <div class="col-6 col-md-2 mb-2">
+                    <button class="article-action-btn" id="toggle-highlights-btn">
+                        <i data-feather="eye"></i> <span id="highlights-btn-text">Show Reviews</span>
+                    </button>
+                </div>
+                <div class="col-6 col-md-2 mb-2">
+                    <button class="article-action-btn" data-bs-toggle="modal" data-bs-target="#downloadModal">
+                        <i data-feather="download"></i> Download
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Article tabs -->
+            <div class="article-tabs">
+                <div class="article-tab active" id="summary-tab" onclick="switchTab('summary')">
+                    Summary
+                </div>
+                <div class="article-tab" id="content-tab" onclick="switchTab('content')">
+                    Full Content
+                </div>
+            </div>
+            
+            <!-- Summary tab content -->
+            <div id="summary-content" class="tab-content">
+                <div class="article-summary-container">
+                    <div class="article-summary" id="article-summary">
+                        {{ article.summary }}
+                    </div>
+                    
+                    {% if show_translation and translate_to != lang %}
+                    <div class="translate-controls">
+                        <button class="btn btn-dark translate-section-btn" 
+                                data-section="article-summary"
+                                data-from="{{ lang }}" 
+                                data-to="{{ translate_to }}">
+                            <i data-feather="refresh-cw"></i> Translate Summary
+                        </button>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Share options for summary -->
+                    <div class="share-section">
+                        <h5 class="mb-3"><i data-feather="share-2"></i> Share this article</h5>
+                        <div class="row">
+                            <!-- Twitter -->
+                            <div class="col-4 col-md-3 mb-2">
+                                <button class="btn-share btn-twitter w-100" data-sharer="twitter" 
+                                        data-title="{{ article.title }} - Read on WikiTruth"
+                                        data-url="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}">
+                                    <i data-feather="x"></i>
+                                </button>
+                            </div>
+                            <!-- Facebook -->
+                            <div class="col-4 col-md-3 mb-2">
+                                <button class="btn-share btn-facebook w-100" data-sharer="facebook" 
+                                       data-url="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}">
+                                    <i data-feather="facebook"></i>
+                                </button>
+                            </div>
+                            <!-- WhatsApp -->
+                            <div class="col-4 col-md-3 mb-2">
+                                <button class="btn-share btn-whatsapp w-100" data-sharer="whatsapp" 
+                                       data-title="{{ article.title }}"
+                                       data-url="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}">
+                                    <i data-feather="message-circle"></i>
+                                </button>
+                            </div>
+                            <!-- Copy Link -->
+                            <div class="col-12 col-md-3 mb-2">
+                                <button class="btn-share w-100" onclick="copyShareLink()">
+                                    <i data-feather="copy"></i> Copy Link
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Highlight interface for summary -->
+                    <div class="highlight-interface mt-3" id="highlight-interface-summary">
+                        <button class="btn btn-dark toggle-highlight-btn" 
+                                data-target="highlight-form-summary">
+                            <i data-feather="edit-3"></i> Mark for Review
+                        </button>
+                        
+                        <div class="highlight-form" id="highlight-form-summary" style="display: none;">
+                            <div class="card mt-2">
+                                <div class="card-body">
+                                    <form onsubmit="saveHighlight(event, '{{ article.title }}_{{ lang }}', 'summary')">
+                                        <div class="mb-2">
+                                            <label for="highlight-text-summary" class="form-label">Text to review:</label>
+                                            <textarea class="form-control" id="highlight-text-summary" rows="2" required
+                                                      placeholder="Copy and paste text from above that needs review"></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-dark">
+                                            <i data-feather="check"></i> Mark for Review
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Full content tab content (hidden initially) -->
+            <div id="content-content" class="tab-content" style="display: none;">
+                <!-- Table of Contents -->
+                <div class="table-of-contents">
+                    <h3 class="toc-title">Table of Contents</h3>
+                    <ul class="toc-list">
+                        {% for section in sections %}
+                            {% if section.title %}
+                                <li class="toc-item toc-level-{{ section.level }}">
+                                    <a href="#section-{{ loop.index }}">{{ section.title }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <!-- Back to TOC button -->
+                <button id="back-to-toc" class="back-to-toc" title="Back to Table of Contents">
+                    <i data-feather="list"></i>
+                </button>
+                
+                <!-- Article sections -->
+                <div class="article-content-container">
+                    {% for section in sections %}
+                    <div class="content-section" id="section-{{ loop.index }}">
+                        {% if section.title %}
+                        <h{{ section.level + 1 }} class="section-heading">{{ section.title }}</h{{ section.level + 1 }}>
+                        {% endif %}
+                        
+                        <div class="section-content" id="section-content-{{ loop.index }}">
+                            {{ section.content }}
+                        </div>
+                        
+                        {% if show_translation and translate_to != lang %}
+                        <div class="translate-controls">
+                            <button class="btn btn-dark translate-section-btn" 
+                                    data-section="section-content-{{ loop.index }}"
+                                    data-from="{{ lang }}" 
+                                    data-to="{{ translate_to }}">
+                                <i data-feather="refresh-cw"></i> Translate Section
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Highlight interface for section -->
+                        <div class="highlight-interface mt-2" id="highlight-interface-{{ loop.index }}">
+                            <button class="btn btn-dark toggle-highlight-btn" 
+                                    data-target="highlight-form-{{ loop.index }}">
+                                <i data-feather="edit-3"></i> Mark for Review
+                            </button>
+                            
+                            <div class="highlight-form" id="highlight-form-{{ loop.index }}" style="display: none;">
+                                <div class="card mt-2">
+                                    <div class="card-body">
+                                        <form onsubmit="saveHighlight(event, '{{ article.title }}_{{ lang }}', 'section-{{ loop.index }}')">
+                                            <div class="mb-2">
+                                                <label for="highlight-text-{{ loop.index }}" class="form-label">Text to review:</label>
+                                                <textarea class="form-control" id="highlight-text-{{ loop.index }}" rows="2" required
+                                                        placeholder="Copy and paste text from above that needs review"></textarea>
+                                            </div>
+                                            <button type="submit" class="btn btn-dark">
+                                                <i data-feather="check"></i> Mark for Review
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Ko-fi donation at the bottom -->
+            <div class="donation-container mt-4">
+                <p>Find this content useful? Support the project:</p>
+                <a href="https://ko-fi.com/wikitruth" target="_blank" class="kofi-button">
+                    <i data-feather="coffee"></i> Support on Ko-fi
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Language Selection Modal -->
+<div class="modal fade" id="languageModal" tabindex="-1" aria-labelledby="languageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="languageModalLabel">Available Languages</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="language-list">
+                    {% for lang_code, lang_title in available_languages.items() %}
+                    <form action="{{ url_for('change_language') }}" method="post" class="language-item-form">
+                        <input type="hidden" name="title" value="{{ article.title }}">
+                        <input type="hidden" name="lang_code" value="{{ lang_code }}">
+                        <input type="hidden" name="lang_title" value="{{ lang_title }}">
+                        <button type="submit" class="language-item {% if lang_code == lang %}active{% endif %}">
+                            <span class="language-code">{{ lang_code }}</span>
+                            <span class="language-name">{{ get_language_name(lang_code) }}</span>
+                            <span class="language-native">{{ get_native_language_name(lang_code) }}</span>
+                            {% if lang_code == lang %}
+                            <span class="badge bg-dark">Current</span>
+                            {% endif %}
+                        </button>
+                    </form>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Translation Options Modal -->
+<div class="modal fade" id="translateModal" tabindex="-1" aria-labelledby="translateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="translateModalLabel">Translation Options</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="translateForm" action="{{ url_for('view_article', title=article.title) }}" method="get">
+                    <input type="hidden" name="lang" value="{{ lang }}">
+                    <input type="hidden" name="show_translation" value="true">
+                    
+                    <div class="mb-3">
+                        <label for="translateTo" class="form-label">Translate Article To:</label>
+                        <select class="form-select" id="translateTo" name="translate_to">
+                            {% for code, name in language_dict.items() %}
+                            <option value="{{ code }}" {% if code == translate_to %}selected{% endif %}>
+                                {{ get_language_name(code) }} ({{ code }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-text mb-3">
+                        The article will be translated section-by-section. Click "Translate Section" 
+                        button on each section to translate it progressively.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="translateForm" class="btn btn-dark">Translate</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Download Modal -->
+<div class="modal fade" id="downloadModal" tabindex="-1" aria-labelledby="downloadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="downloadModalLabel">Download Article</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-12 mb-3">
+                        <h6 class="fw-bold">Download Options</h6>
+                        <p class="text-muted small">Select which version of the article you want to download.</p>
+                    </div>
+                    
+                    <!-- Original language -->
+                    <div class="col-12 mb-3">
+                        <a href="{{ url_for('download_article', title=article.title, lang=lang) }}" 
+                           class="btn btn-dark d-block">
+                            <i data-feather="download"></i> Download in {{ get_language_name(lang) }}
+                        </a>
+                    </div>
+                    
+                    {% if show_translation and translate_to != lang %}
+                    <!-- Translated version -->
+                    <div class="col-12 mb-3">
+                        <a href="{{ url_for('download_article', title=article.title, lang=lang, is_translated='true', translated_to=translate_to) }}" 
+                           class="btn btn-outline-dark d-block">
+                            <i data-feather="globe"></i> Download with {{ get_language_name(translate_to) }} Translation
+                        </a>
+                        <div class="form-text mt-1">
+                            <small>Only translated sections will be included in the downloaded document.</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Ko-fi donation reminder -->
+                <div class="donation-container">
+                    <p class="mb-2">If you find this content useful:</p>
+                    <a href="https://ko-fi.com/wikitruth" target="_blank" class="kofi-button">
+                        <i data-feather="coffee"></i> Support on Ko-fi
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shareModalLabel">Share This Article</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <!-- Social Media Icons -->
+                    <div class="col-12 mb-3">
+                        <h6 class="text-center mb-3">Share via Social Media</h6>
+                        <div class="share-buttons">
+                            <!-- X (Twitter) -->
+                            <button class="btn-share btn-twitter" data-sharer="twitter" 
+                                    data-title="{{ article.title }} - Read on WikiTruth"
+                                    data-url="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}">
+                                <i data-feather="x" class="social-icon"></i>
+                            </button>
+                            
+                            <!-- Facebook -->
+                            <button class="btn-share btn-facebook" data-sharer="facebook" 
+                                   data-url="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}">
+                                <i data-feather="facebook" class="social-icon"></i>
+                            </button>
+                            
+                            <!-- LinkedIn -->
+                            <button class="btn-share btn-linkedin" data-sharer="linkedin" 
+                                   data-url="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}">
+                                <i data-feather="linkedin" class="social-icon"></i>
+                            </button>
+                            
+                            <!-- WhatsApp -->
+                            <button class="btn-share btn-whatsapp" data-sharer="whatsapp" 
+                                   data-title="{{ article.title }}"
+                                   data-url="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}">
+                                <i data-feather="message-circle" class="social-icon"></i>
+                            </button>
+                            
+                            <!-- Telegram -->
+                            <button class="btn-share btn-telegram" data-sharer="telegram" 
+                                   data-title="{{ article.title }}"
+                                   data-url="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}">
+                                <i data-feather="send" class="social-icon"></i>
+                            </button>
+                            
+                            <!-- Email -->
+                            <button class="btn-share btn-email" data-sharer="email" 
+                                   data-title="Check out this article: {{ article.title }}"
+                                   data-url="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}"
+                                   data-subject="Interesting article from WikiTruth">
+                                <i data-feather="mail" class="social-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Messaging -->
+                    <div class="col-12">
+                        <h6 class="text-center mb-3">Copy Article Link</h6>
+                        <div class="input-group">
+                            <input type="text" id="shareLink" class="form-control" 
+                                   value="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}" readonly>
+                            <button class="btn btn-dark copy-button" onclick="copyShareLink()">
+                                <i data-feather="copy"></i>
+                            </button>
+                        </div>
+                        <div id="copyMessage" class="text-center mt-2" style="display: none;">
+                            <small class="text-success">Link copied to clipboard!</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ko-fi donation reminder -->
+                <div class="donation-container">
+                    <p class="mb-2">If you find this content useful:</p>
+                    <a href="https://ko-fi.com/wikitruth" target="_blank" class="kofi-button">
+                        <i data-feather="coffee"></i> Support on Ko-fi
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Store highlights data for this article
+    const articleHighlights = {{ highlights|tojson }};
+    const articleId = '{{ article.title }}_{{ lang }}';
+    let highlightModeEnabled = false;
+    
+    // Apply highlights on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize icons
+        feather.replace();
+        
+        // Initialize highlight toggling
+        const toggleBtns = document.querySelectorAll('.toggle-highlight-btn');
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const targetForm = document.getElementById(targetId);
+                if (targetForm.style.display === 'none') {
+                    targetForm.style.display = 'block';
+                } else {
+                    targetForm.style.display = 'none';
+                }
+            });
+        });
+        
+        // Apply existing highlights
+        applyHighlightsToText(articleHighlights);
+        
+        // Initialize translation buttons
+        const translateBtns = document.querySelectorAll('.translate-section-btn');
+        translateBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                translateSection(
+                    this.getAttribute('data-section'),
+                    this.getAttribute('data-from'),
+                    this.getAttribute('data-to')
+                );
+                // Change button to indicate translation is in progress
+                this.innerHTML = '<i data-feather="loader"></i> Translating...';
+                this.disabled = true;
+                feather.replace();
+            });
+        });
+        
+        // Initialize back to TOC button
+        const backToTocBtn = document.getElementById('back-to-toc');
+        if (backToTocBtn) {
+            backToTocBtn.addEventListener('click', function() {
+                // Scroll to the table of contents
+                const tocElement = document.querySelector('.table-of-contents');
+                if (tocElement) {
+                    tocElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+            
+            // Show/hide back to TOC button based on scroll position
+            window.addEventListener('scroll', function() {
+                if (document.getElementById('content-content').style.display === 'block') {
+                    if (window.scrollY > 500) {
+                        backToTocBtn.style.display = 'flex';
+                    } else {
+                        backToTocBtn.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Initialize toggle highlights button
+        const toggleHighlightsBtn = document.getElementById('toggle-highlights-btn');
+        if (toggleHighlightsBtn) {
+            toggleHighlightsBtn.addEventListener('click', function() {
+                highlightModeEnabled = !highlightModeEnabled;
+                const btnText = document.getElementById('highlights-btn-text');
+                
+                if (highlightModeEnabled) {
+                    btnText.textContent = 'Hide Reviews';
+                    document.body.classList.add('highlight-mode');
+                    toggleHighlightsBtn.classList.add('active');
+                    toggleHighlightsBtn.style.backgroundColor = '#000';
+                    toggleHighlightsBtn.style.color = '#fff';
+                    showOnlyHighlightedText();
+                } else {
+                    btnText.textContent = 'Show Reviews';
+                    document.body.classList.remove('highlight-mode');
+                    toggleHighlightsBtn.classList.remove('active');
+                    toggleHighlightsBtn.style.backgroundColor = '';
+                    toggleHighlightsBtn.style.color = '';
+                    restoreOriginalText();
+                }
+            });
+        }
+        
+        // Initialize share buttons
+        if (window.Sharer) {
+            window.Sharer.init();
+        }
+    });
+    
+    // Function to copy share link
+    function copyShareLink() {
+        const shareLinkInput = document.getElementById('shareLink');
+        shareLinkInput.select();
+        document.execCommand('copy');
+        
+        // Show temporary success message
+        const button = shareLinkInput.nextElementSibling;
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i data-feather="check"></i>';
+        feather.replace();
+        
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            feather.replace();
+        }, 2000);
+    }
+    
+    // Function to save a highlight
+    function saveHighlight(event, articleId, context) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const textareaId = 'highlight-text-' + context.replace('section-', '');
+        const textarea = document.getElementById(textareaId);
+        const textToHighlight = textarea.value.trim();
+        
+        if (!textToHighlight) {
+            alert('Please enter text to highlight');
+            return;
+        }
+        
+        // Submit highlight via AJAX
+        fetch('{{ url_for("save_highlight_route") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'article_id': articleId,
+                'text_to_highlight': textToHighlight,
+                'context': context
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Clear the textarea
+                textarea.value = '';
+                
+                // Hide the form
+                const formContainer = form.closest('.highlight-form');
+                formContainer.style.display = 'none';
+                
+                // Apply the new highlights
+                applyHighlightsToText(data.highlights);
+                
+                // Show success message
+                alert('Text marked for review!');
+            } else {
+                alert('Error: ' + (data.error || 'Could not save highlight'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving highlight');
+        });
+    }
+    
+    // Function to apply highlights to text
+    function applyHighlightsToText(highlights) {
+        if (!highlights || highlights.length === 0) return;
+        
+        // Apply highlights to the summary
+        applyHighlightsToSection('article-summary', highlights);
+        
+        // Apply highlights to each content section
+        const sections = document.querySelectorAll('.section-content');
+        sections.forEach((section, index) => {
+            applyHighlightsToSection(section.id, highlights);
+        });
+    }
+    
+    // Apply highlights to a specific section
+    function applyHighlightsToSection(sectionId, highlights) {
+        const section = document.getElementById(sectionId);
+        if (!section) return;
+        
+        // Get current HTML
+        let html = section.innerHTML;
+        
+        // Sort highlights by length (longest first) to handle nested highlights
+        highlights.sort((a, b) => b.text.length - a.text.length);
+        
+        // Replace each highlight with a marked version
+        for (const highlight of highlights) {
+            const text = highlight.text;
+            if (!text || html.indexOf(text) === -1) continue;
+            
+            // Escape special regex characters
+            const escapedText = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            
+            // Replace the text with a marked version (using a simple replace to avoid regex issues)
+            html = html.split(text).join(`<mark data-context="${highlight.context}">${text}</mark>`);
+        }
+        
+        // Update the section's HTML
+        section.innerHTML = html;
+    }
+    
+    // Function to show only highlighted text when in highlight mode
+    function showOnlyHighlightedText() {
+        // Store original content for restoration later
+        if (!window.originalContent) {
+            window.originalContent = {};
+            
+            // Store summary content
+            const summary = document.getElementById('article-summary');
+            if (summary) {
+                window.originalContent['article-summary'] = summary.innerHTML;
+            }
+            
+            // Store section content
+            const sections = document.querySelectorAll('.section-content');
+            sections.forEach(section => {
+                window.originalContent[section.id] = section.innerHTML;
+            });
+        }
+        
+        // Now process each section to show only highlights
+        const allSections = [
+            document.getElementById('article-summary'),
+            ...document.querySelectorAll('.section-content')
+        ].filter(Boolean);
+        
+        allSections.forEach(section => {
+            // Get all marks in this section
+            const marks = section.querySelectorAll('mark');
+            
+            if (marks.length === 0) {
+                // If no highlights, show a message
+                section.innerHTML = '<p class="text-muted">No highlighted text in this section</p>';
+            } else {
+                // Create a container for highlighted parts
+                const highlightContainer = document.createElement('div');
+                highlightContainer.className = 'highlights-only';
+                
+                // Add each highlight with context
+                marks.forEach(mark => {
+                    const highlightItem = document.createElement('div');
+                    highlightItem.className = 'highlight-item';
+                    
+                    const context = mark.getAttribute('data-context');
+                    if (context) {
+                        highlightItem.innerHTML = `
+                            <div class="highlight-context">${context}</div>
+                            <div class="highlight-text">${mark.outerHTML}</div>
+                        `;
+                    } else {
+                        highlightItem.innerHTML = `<div class="highlight-text">${mark.outerHTML}</div>`;
+                    }
+                    
+                    highlightContainer.appendChild(highlightItem);
+                });
+                
+                // Replace section content with just the highlights
+                section.innerHTML = '';
+                section.appendChild(highlightContainer);
+            }
+        });
+        
+        // Show a message at the top of the article
+        const articleHeader = document.querySelector('.article-header');
+        if (articleHeader && !document.getElementById('highlight-mode-indicator')) {
+            const indicator = document.createElement('div');
+            indicator.id = 'highlight-mode-indicator';
+            indicator.className = 'alert alert-dark mt-3 p-3';
+            indicator.innerHTML = '<i data-feather="eye"></i> <strong>Review Mode Active:</strong> Showing only marked text. Click "Hide Reviews" to return to normal view.';
+            articleHeader.insertAdjacentElement('afterend', indicator);
+            feather.replace();
+        }
+    }
+    
+    // Function to restore the original text when exiting highlight mode
+    function restoreOriginalText() {
+        if (!window.originalContent) return;
+        
+        // Restore summary
+        const summary = document.getElementById('article-summary');
+        if (summary && window.originalContent['article-summary']) {
+            summary.innerHTML = window.originalContent['article-summary'];
+        }
+        
+        // Restore sections
+        const sections = document.querySelectorAll('.section-content');
+        sections.forEach(section => {
+            if (window.originalContent[section.id]) {
+                section.innerHTML = window.originalContent[section.id];
+            }
+        });
+        
+        // Remove the highlight mode indicator
+        const indicator = document.getElementById('highlight-mode-indicator');
+        if (indicator) indicator.remove();
+    }
+    
+    // Function to translate a section
+    function translateSection(sectionId, fromLang, toLang) {
+        const section = document.getElementById(sectionId);
+        if (!section) return;
+        
+        const text = section.innerText;
+        
+        fetch('{{ url_for("translate_section") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'text': text,
+                'from_lang': fromLang,
+                'to_lang': toLang
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.translated_text) {
+                // Create translation container
+                const translationContainer = document.createElement('div');
+                translationContainer.className = 'translated-content';
+                translationContainer.innerHTML = `
+                    <div class="translation-header">
+                        <span class="translation-label">Translated to ${toLang}</span>
+                    </div>
+                    <div class="translation-text">${data.translated_text}</div>
+                `;
+                
+                // Remove any existing translation container
+                const existingTranslation = section.nextElementSibling;
+                if (existingTranslation && existingTranslation.classList.contains('translated-content')) {
+                    existingTranslation.remove();
+                }
+                
+                // Insert after the original section
+                section.parentNode.insertBefore(translationContainer, section.nextSibling);
+                
+                // Reset the button
+                const button = document.querySelector(`.translate-section-btn[data-section="${sectionId}"]`);
+                if (button) {
+                    button.innerHTML = '<i data-feather="check"></i> Translated';
+                    button.disabled = false;
+                    feather.replace();
+                }
+            } else if (data.error) {
+                alert('Translation error: ' + data.error);
+                
+                // Reset the button
+                const button = document.querySelector(`.translate-section-btn[data-section="${sectionId}"]`);
+                if (button) {
+                    button.innerHTML = '<i data-feather="refresh-cw"></i> Retry Translation';
+                    button.disabled = false;
+                    feather.replace();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error translating section');
+            
+            // Reset the button
+            const button = document.querySelector(`.translate-section-btn[data-section="${sectionId}"]`);
+            if (button) {
+                button.innerHTML = '<i data-feather="refresh-cw"></i> Retry Translation';
+                button.disabled = false;
+                feather.replace();
+            }
+        });
+    }
+</script>
+{% endblock %}
