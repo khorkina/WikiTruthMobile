@@ -119,10 +119,10 @@
                             </div>
                             <!-- Copy Link -->
                             <div class="col-12 col-md-3 mb-2">
-                                <div class="share-link-container">
-                                    <input type="text" id="shareLink" class="share-link-input" 
+                                <div class="input-group">
+                                    <input type="text" id="shareLink" class="form-control" 
                                            value="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}" readonly>
-                                    <button class="btn-copy" onclick="copyShareLink()">
+                                    <button class="btn btn-outline-dark" onclick="copyShareLink()">
                                         <i data-feather="copy"></i>
                                     </button>
                                 </div>
@@ -355,7 +355,7 @@
                         <div class="input-group">
                             <input type="text" class="form-control" id="shareModalLink" 
                                   value="{{ url_for('view_article', title=article.title, lang=lang, _external=True) }}" readonly>
-                            <button class="btn btn-outline-secondary btn-copy" type="button" data-target="shareModalLink">
+                            <button class="btn btn-outline-dark" type="button" data-target="shareModalLink">
                                 <i data-feather="copy"></i>
                             </button>
                         </div>

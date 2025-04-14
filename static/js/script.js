@@ -383,6 +383,13 @@ function showOnlyHighlights(showOnly) {
     // Get all sections with highlights
     const sections = document.querySelectorAll('.content-section');
     
+    // Update button text
+    const btnText = document.getElementById('highlights-btn-text');
+    if (btnText) {
+        btnText.textContent = showOnly ? 'Hide Reviews' : 'Show Reviews';
+    }
+    
+    // Highlight toggle logic
     if (showOnly) {
         // Create highlights container if it doesn't exist
         let highlightsContainer = document.querySelector('.highlights-only');
@@ -454,6 +461,38 @@ function showOnlyHighlights(showOnly) {
                         
                         // Add to container
                         highlightsContainer.appendChild(highlightItem);
+                        
+                        // Also highlight in the actual content
+                        if (highlight.context === 'summary') {
+                            const summary = document.getElementById('article-summary');
+                            if (summary) {
+                                let summaryHtml = summary.innerHTML;
+                                try {
+                                    const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                    const escapedText = escapeRegExp(highlight.text);
+                                    const regex = new RegExp(escapedText, 'g');
+                                    summaryHtml = summaryHtml.replace(regex, `<mark>${highlight.text}</mark>`);
+                                    summary.innerHTML = summaryHtml;
+                                } catch (e) {
+                                    console.error('Error highlighting in summary:', e);
+                                }
+                            }
+                        } else if (highlight.context.startsWith('section-')) {
+                            const sectionNumber = highlight.context.replace('section-', '');
+                            const sectionContent = document.getElementById(`section-content-${sectionNumber}`);
+                            if (sectionContent) {
+                                let sectionHtml = sectionContent.innerHTML;
+                                try {
+                                    const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                    const escapedText = escapeRegExp(highlight.text);
+                                    const regex = new RegExp(escapedText, 'g');
+                                    sectionHtml = sectionHtml.replace(regex, `<mark>${highlight.text}</mark>`);
+                                    sectionContent.innerHTML = sectionHtml;
+                                } catch (e) {
+                                    console.error('Error highlighting in section:', e);
+                                }
+                            }
+                        }
                     });
                     
                     // Show highlighted container
@@ -485,5 +524,14 @@ function showOnlyHighlights(showOnly) {
         if (highlightsContainer) {
             highlightsContainer.style.display = 'none';
         }
+        
+        // Remove highlights from the actual content
+        document.querySelectorAll('mark').forEach(mark => {
+            const parent = mark.parentNode;
+            if (parent) {
+                parent.replaceChild(document.createTextNode(mark.textContent), mark);
+                parent.normalize(); // Merge adjacent text nodes
+            }
+        });
     }
 }
