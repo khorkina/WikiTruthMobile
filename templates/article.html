@@ -5,6 +5,8 @@
 {% block head %}
 <!-- Social Sharing Script -->
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.1/sharer.min.js"></script>
+<!-- Add article ID for JavaScript to use -->
+<meta name="article-id" content="{{ article.title }}_{{ lang }}">
 {% endblock %}
 
 {% block content %}

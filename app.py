@@ -173,6 +173,31 @@ def save_highlight():
     text_to_highlight = request.form.get('text_to_highlight', '')
     context = request.form.get('context', '')
     
+    # Check if this is just a retrieval request
+    if article_id and context == 'retrieve_only':
+        try:
+            # Load existing highlights
+            highlights_data = load_highlights()
+            
+            # Parse article_id (format: title_lang)
+            try:
+                title, lang = article_id.rsplit('_', 1)
+            except ValueError:
+                title = article_id
+                lang = 'en'
+            
+            # Get highlights for this article
+            if title in highlights_data and lang in highlights_data[title]['languages']:
+                article_highlights = highlights_data[title]['languages'][lang]['highlights']
+                return jsonify({'success': True, 'highlights': article_highlights})
+            else:
+                return jsonify({'success': True, 'highlights': []})
+        
+        except Exception as e:
+            logger.error(f"Error retrieving highlights: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)})
+    
+    # If not a retrieval request, require text_to_highlight
     if not article_id or not text_to_highlight:
         return jsonify({'success': False, 'error': 'Missing required parameters'})
     
@@ -206,7 +231,9 @@ def save_highlight():
         
         # Save highlights
         if save_highlights(highlights_data):
-            return jsonify({'success': True})
+            # Return the updated highlights
+            article_highlights = highlights_data[title]['languages'][lang]['highlights']
+            return jsonify({'success': True, 'highlights': article_highlights})
         else:
             return jsonify({'success': False, 'error': 'Error saving highlight'})
     except Exception as e:

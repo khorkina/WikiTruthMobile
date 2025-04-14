@@ -9,6 +9,7 @@
     --border-color: #d2b48c; /* Brown borders */
     --highlight-color: #f5ebe0; /* Very light brown highlight */
     --button-hover: #e6ddd0; /* Light brown hover */
+    --donation-color: #000000; /* Black for donation elements */
 }
 
 body {
@@ -590,7 +591,7 @@ mark {
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background-color: #FF5E5B;
+    background-color: var(--donation-color);
     color: white;
     border-radius: 8px;
     text-decoration: none;
@@ -612,7 +613,7 @@ mark {
 .donation-container.top {
     margin: 0;
     padding: 0.5rem;
-    background-color: #000;
+    background-color: var(--donation-color);
     color: white;
     border-radius: 0;
     text-align: center;

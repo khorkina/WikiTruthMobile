@@ -391,53 +391,78 @@ function showOnlyHighlights(showOnly) {
             }
         }
         
-        // Find all highlighted text
-        const marks = document.querySelectorAll('mark');
-        if (marks.length > 0) {
-            // Clear previous highlights
-            highlightsContainer.innerHTML = '';
-            
-            // Create heading
-            const heading = document.createElement('h3');
-            heading.className = 'section-title';
-            heading.textContent = 'Marked Reviews';
-            highlightsContainer.appendChild(heading);
-            
-            // Add each highlight
-            marks.forEach((mark, index) => {
-                // Find the section containing this highlight
-                let section = mark.closest('.content-section');
-                let sectionTitle = section ? section.querySelector('.section-heading') : null;
-                
-                // Create highlight item
-                const highlightItem = document.createElement('div');
-                highlightItem.className = 'highlight-item';
-                
-                // Create context info
-                const context = document.createElement('div');
-                context.className = 'highlight-context';
-                context.textContent = sectionTitle ? sectionTitle.textContent : 'General';
-                
-                // Create highlight text
-                const text = document.createElement('div');
-                text.className = 'highlight-text';
-                text.innerHTML = mark.outerHTML;
-                
-                // Add to highlight item
-                highlightItem.appendChild(context);
-                highlightItem.appendChild(text);
-                
-                // Add to container
-                highlightsContainer.appendChild(highlightItem);
+        // Load highlights data from server for this article
+        const articleId = document.querySelector('meta[name="article-id"]')?.content;
+        
+        if (articleId) {
+            fetch(`/save-highlight`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'article_id': articleId,
+                    'text_to_highlight': '',  // Empty to just retrieve current highlights
+                    'context': 'retrieve_only'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.highlights && data.highlights.length > 0) {
+                    // Clear previous highlights container content
+                    highlightsContainer.innerHTML = '';
+                    
+                    // Create heading
+                    const heading = document.createElement('h3');
+                    heading.className = 'section-title';
+                    heading.textContent = 'Marked Reviews';
+                    highlightsContainer.appendChild(heading);
+                    
+                    // Process each highlight
+                    data.highlights.forEach(highlight => {
+                        // Create highlight item
+                        const highlightItem = document.createElement('div');
+                        highlightItem.className = 'highlight-item';
+                        
+                        // Create context info
+                        const context = document.createElement('div');
+                        context.className = 'highlight-context';
+                        context.textContent = highlight.context || 'General';
+                        
+                        // Create highlight text
+                        const text = document.createElement('div');
+                        text.className = 'highlight-text';
+                        text.innerHTML = `<mark>${highlight.text}</mark>`;
+                        
+                        // Add to highlight item
+                        highlightItem.appendChild(context);
+                        highlightItem.appendChild(text);
+                        
+                        // Add to container
+                        highlightsContainer.appendChild(highlightItem);
+                    });
+                    
+                    // Show highlighted container
+                    highlightsContainer.style.display = 'block';
+                } else {
+                    // No highlights found
+                    highlightsContainer.innerHTML = `
+                        <h3 class="section-title">Marked Reviews</h3>
+                        <p>No text has been marked for review in this article.</p>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching highlights:', error);
+                highlightsContainer.innerHTML = `
+                    <h3 class="section-title">Marked Reviews</h3>
+                    <p>Error loading review highlights. Please try again later.</p>
+                `;
             });
-            
-            // Show highlighted container
-            highlightsContainer.style.display = 'block';
         } else {
-            // No highlights found
             highlightsContainer.innerHTML = `
                 <h3 class="section-title">Marked Reviews</h3>
-                <p>No text has been marked for review in this article.</p>
+                <p>No article information found.</p>
             `;
         }
     } else {
