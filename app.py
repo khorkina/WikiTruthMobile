@@ -8,6 +8,9 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from docx import Document
 from utils import get_language_name, timestamp_to_date
 import wiki_utils
+import threading
+import requests
+
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -366,6 +369,16 @@ def export_article(title):
         logger.error(f"Export error: {str(e)}")
         flash(f"Error exporting document: {str(e)}", 'danger')
         return redirect(url_for('view_article', title=title, lang=lang))
+
+
+def keep_alive():
+    while True:
+        try:
+            print("[KeepAlive] Pinging self to stay awake...")
+            requests.get("https://wikitruth.onrender.com/")  # ЗАМЕНИ НА СВОЙ URL!
+        except Exception as e:
+            print("[KeepAlive] Ping failed:", e)
+        time.sleep(600)  # каждые 10 минут
 
 # Error handlers
 @app.errorhandler(404)
